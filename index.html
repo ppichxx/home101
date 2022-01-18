@@ -1,56 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-</head>
-<body>
+  </head>
+  <body>
     <div>Teachable Machine Image Model</div>
-<div id="webcam-container"></div>
-<div id="label-container"></div>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-<script type="text/javascript">
-    // More API functions here:
-    // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script type="text/javascript">
+      // More API functions here:
+      // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
 
-    // the link to your model provided by Teachable Machine export panel
-    const URL = "https://teachablemachine.withgoogle.com/models/W6t6EafJ9/";
+      // the link to your model provided by Teachable Machine export panel
+      const URL = "https://teachablemachine.withgoogle.com/models/W6t6EafJ9/";
 
-    let model, webcam, labelContainer, maxPredictions;
+      let model, webcam, labelContainer, maxPredictions;
 
-    // init();
-    const CH_ACCESS_TOKEN = "zw7NkVSK/rV7+7TRF9xR1B/7DpHP6E2bTyDa1t50H2Ij8rddev5TmTve6fiLfk5DXOvOuC368uqjA6Gb/2p+krr8YvsdDp14pSemGXz4cAtrvXtOL7aera0GgVMMBfzCXoxbxKnGwH0YbIQYUcmvnwdB04t89/1O/w1cDnyilFU="
+      init();
 
-    const data = {
-        "messages":[
-            {
-                "type":"text",
-                "text":"Hello, world1"
-            },
-            {
-                "type":"text",
-                "text":"Hello, world2"
-            }
-        ]
-    };
+      let oldvar = "";
+      let newvar = "";
 
-    const headers = {
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            Authorization: "Bearer " + CH_ACCESS_TOKEN + "",
-            "Content-Type": "application/json",
-            crossdomain: true
-        }
-    };
-
-    axios.post("https://api.line.me/v2/bot/message/broadcast", data, headers).then(console.log)
-
-    // Load the image model and setup the webcam
-    async function init() {
+      // Load the image model and setup the webcam
+      async function init() {
         const modelURL = URL + "model.json";
         const metadataURL = URL + "metadata.json";
 
@@ -71,28 +49,52 @@
         // append elements to the DOM
         document.getElementById("webcam-container").appendChild(webcam.canvas);
         labelContainer = document.getElementById("label-container");
-        for (let i = 0; i < maxPredictions; i++) { // and class labels
-            labelContainer.appendChild(document.createElement("div"));
+        for (let i = 0; i < maxPredictions; i++) {
+          // and class labels
+          labelContainer.appendChild(document.createElement("div"));
         }
-    }
+      }
 
-    async function loop() {
+      async function loop() {
         webcam.update(); // update the webcam frame
         await predict();
         window.requestAnimationFrame(loop);
-    }
+      }
 
-    // run the webcam image through the image model
-    async function predict() {
+      // run the webcam image through the image model
+      async function predict() {
         // predict can take in an image, video or canvas html element
         const prediction = await model.predict(webcam.canvas);
-        for (let i = 0; i < maxPredictions; i++) {
-            const classPrediction =
-                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-            labelContainer.childNodes[i].innerHTML = classPrediction;
-        }
-    }
-</script>
 
-</body>
+        for (let i = 0; i < maxPredictions; i++) {
+          if (prediction[i].probability.toFixed(2) > 0.9) {
+            // console.log(prediction[i].className);
+            oldvar = newvar;
+            newvar = prediction[i].className;
+
+            if (oldvar != newvar) {
+              const data = {
+                message: `Welcome to home ! ${
+                  prediction[i].className
+                } | Time: ${new Date()}`,
+              };
+
+              axios
+                .post("http://localhost:3000/sendtoline", data, {
+                  headers: {
+                    "Access-Control-Allow-Origin": "*",
+                  },
+                })
+                .then(console.log);
+            }
+          }
+          //   const classPrediction =
+          //     prediction[i].className +
+          //     ": " +
+          //     prediction[i].probability.toFixed(2);
+          //   labelContainer.childNodes[i].innerHTML = classPrediction;
+        }
+      }
+    </script>
+  </body>
 </html>
